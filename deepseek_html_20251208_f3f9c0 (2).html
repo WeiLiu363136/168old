@@ -1513,6 +1513,39 @@
             visibility: visible;
         }
 
+        /* 浮动预约按钮（默认桌面端隐藏，移动端显示） */
+        .floating-appointment-btn {
+            position: fixed;
+            right: 16px;
+            bottom: 80px;
+            z-index: 1200;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--gradient-accent);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            color: #04111d;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        .floating-appointment-btn span {
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #fff;
+            white-space: nowrap;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
         /* 响应式设计 */
         @media (max-width: 1200px) {
             .products-grid {
@@ -1548,8 +1581,37 @@
                 gap: 20px;
             }
             
+            header {
+                position: static;
+                padding: 6px 0;
+                box-shadow: none;
+            }
+
+            .logo-image-container {
+                width: 56px;
+                height: 56px;
+            }
+
+            .logo-title {
+                font-size: 18px;
+            }
+
+            .logo-subtitle {
+                display: none;
+            }
+
+            nav ul {
+                gap: 12px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            nav a {
+                font-size: 13px;
+            }
+
             .hero {
-                padding: 180px 0 80px;
+                padding: 100px 0 70px;
             }
             
             .hero h1 {
@@ -1580,6 +1642,20 @@
             
             .ai-options {
                 grid-template-columns: 1fr;
+            }
+
+            .product-actions {
+                justify-content: center;
+            }
+
+            /* 手机端隐藏顶部导航中的“了解我们”按钮，改用浮动按钮 */
+            #appointmentBtn {
+                display: none;
+            }
+
+            /* 手机端显示可拖拽浮动按钮 */
+            .floating-appointment-btn {
+                display: flex;
             }
         }
 
@@ -2075,12 +2151,16 @@
             </div>
             
             <div class="copyright">
-                <p>© 2023 <span class="highlight">江西一六八科技有限公司</span> 版权所有 | 赣ICP备2023012345号</p>
-                <p>本网站所有产品说明及效果展示均基于实验室数据及用户反馈，实际效果可能因个人体质差异而有所不同。</p>
-                <p style="margin-top: 10px; font-size: 12px;">*Logo位置已预留，请上传公司logo图片替换当前占位符</p>
+                <p>© 2025 <span class="highlight">江西一六八生物科技有限公司</span> 版权所有 | 赣ICP备2023012345号</p>
             </div>
         </div>
     </footer>
+
+    <!-- 浮动了解我们按钮（主要用于手机端） -->
+    <div class="floating-appointment-btn" id="floatingAppointmentBtn">
+        <i class="fas fa-comments"></i>
+        <span>了解我们</span>
+    </div>
 
     <script>
         // 产品数据
@@ -2455,9 +2535,11 @@
             
             // 检测预约模态框
             const appointmentBtn = document.getElementById('appointmentBtn');
+            const floatingAppointmentBtn = document.getElementById('floatingAppointmentBtn');
             const appointmentModal = document.getElementById('appointmentModal');
             const closeAppointment = document.getElementById('closeAppointment');
             
+            // 顶部按钮打开预约（桌面端）
             appointmentBtn.addEventListener('click', function() {
                 appointmentModal.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
@@ -2474,6 +2556,72 @@
                     document.body.style.overflow = 'auto';
                 }
             });
+
+            // 浮动按钮点击（主要用于移动端）
+            floatingAppointmentBtn.addEventListener('click', function() {
+                appointmentModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+
+            // 浮动按钮拖拽逻辑（支持触摸和鼠标）
+            (function initFloatingDrag(btn) {
+                if (!btn) return;
+
+                let isDragging = false;
+                let startX = 0;
+                let startY = 0;
+                let startLeft = 0;
+                let startTop = 0;
+
+                const getPointer = (e) => e.touches ? e.touches[0] : e;
+
+                const onDown = (e) => {
+                    const p = getPointer(e);
+                    isDragging = true;
+                    startX = p.clientX;
+                    startY = p.clientY;
+                    const rect = btn.getBoundingClientRect();
+                    startLeft = rect.left;
+                    startTop = rect.top;
+                    e.preventDefault();
+                };
+
+                const onMove = (e) => {
+                    if (!isDragging) return;
+                    const p = getPointer(e);
+                    const dx = p.clientX - startX;
+                    const dy = p.clientY - startY;
+
+                    let newLeft = startLeft + dx;
+                    let newTop = startTop + dy;
+
+                    const vw = window.innerWidth;
+                    const vh = window.innerHeight;
+                    const rect = btn.getBoundingClientRect();
+                    const w = rect.width;
+                    const h = rect.height;
+
+                    newLeft = Math.max(0, Math.min(vw - w, newLeft));
+                    newTop = Math.max(0, Math.min(vh - h, newTop));
+
+                    btn.style.left = newLeft + 'px';
+                    btn.style.top = newTop + 'px';
+                    btn.style.right = 'auto';
+                    btn.style.bottom = 'auto';
+                };
+
+                const onUp = () => {
+                    isDragging = false;
+                };
+
+                btn.addEventListener('mousedown', onDown);
+                btn.addEventListener('touchstart', onDown, { passive: false });
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('touchmove', onMove, { passive: false });
+                window.addEventListener('mouseup', onUp);
+                window.addEventListener('touchend', onUp);
+                window.addEventListener('touchcancel', onUp);
+            })(floatingAppointmentBtn);
             
             // 产品详情模态框
             const modal = document.getElementById('productModal');
